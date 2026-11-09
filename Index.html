@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS AI</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#020914;color:#00d9ff;
+ font-family:Arial,sans-serif;min-height:100vh;
+ display:flex;align-items:center;justify-content:center;
+ padding:20px;
+}
+.app{width:100%;max-width:500px;text-align:center}
+h1{letter-spacing:8px;font-size:35px;text-shadow:0 0 20px #00d9ff}
+.sub{color:#6babc5;letter-spacing:3px;font-size:11px}
+.core{
+ width:190px;height:190px;border:3px solid #00d9ff;
+ border-radius:50%;margin:35px auto;
+ display:flex;align-items:center;justify-content:center;
+ box-shadow:0 0 20px #00d9ff,inset 0 0 25px #007aab;
+ animation:pulse 3s infinite;
+}
+.core span{font-size:65px}
+@keyframes pulse{
+ 50%{box-shadow:0 0 45px #00d9ff,inset 0 0 40px #007aab}
+}
+.status{color:#6eeaff;font-size:13px;margin:15px}
+button{
+ background:transparent;color:#00d9ff;
+ border:1px solid #00d9ff;padding:13px 18px;
+ margin:5px;border-radius:8px;font-size:14px;
+}
+button:active{background:#006b88}
+input{
+ width:70%;padding:14px;background:#071b2b;
+ border:1px solid #008db5;color:white;border-radius:8px;
+}
+#chat{
+ height:160px;overflow-y:auto;text-align:left;
+ border:1px solid #07516b;padding:12px;
+ margin:20px 0;border-radius:8px;
+ color:#c4efff;font-size:14px;
+}
+.message{margin:10px 0}
+.user{color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>J.A.R.V.I.S.</h1>
+<div class="sub">JUST A RATHER VERY INTELLIGENT SYSTEM</div>
+
+<div class="core"><span>◉</span></div>
+
+<div class="status" id="status">SISTEMA PRONTO</div>
+
+<button onclick="startListening()">🎙 PARLA</button>
+<button onclick="speak('Sono sempre a tua disposizione.')">🔊 VOCE</button>
+
+<div id="chat">
+<div class="message">JARVIS: Buonasera. Sistemi operativi. Come posso assisterti?</div>
+</div>
+
+<input id="message" placeholder="Scrivi un comando...">
+<button onclick="sendMessage()">INVIA</button>
+
+<div style="margin-top:20px">
+<button onclick="command('ora')">ORARIO</button>
+<button onclick="command('data')">DATA</button>
+<button onclick="command('aiuto')">AIUTO</button>
+</div>
+</div>
+
+<script>
+const statusText=document.getElementById("status");
+const chat=document.getElementById("chat");
+
+function addMessage(who,text){
+ const div=document.createElement("div");
+ div.className="message";
+ div.textContent=who+": "+text;
+ chat.appendChild(div);
+ chat.scrollTop=chat.scrollHeight;
+}
+
+function speak(text){
+ if(!("speechSynthesis" in window)){
+  statusText.textContent="VOCE NON SUPPORTATA";
+  return;
+ }
+ speechSynthesis.cancel();
+ const msg=new SpeechSynthesisUtterance(text);
+ msg.lang="it-IT";
+ msg.rate=0.95;
+ msg.pitch=0.85;
+ const voices=speechSynthesis.getVoices();
+ const italian=voices.find(v=>v.lang.toLowerCase().startsWith("it"));
+ if(italian)msg.voice=italian;
+ speechSynthesis.speak(msg);
+}
+
+function answer(text){
+ addMessage("JARVIS",text);
+ speak(text);
+}
+
+function command(text){
+ text=text.toLowerCase().trim();
+ addMessage("TU",text);
+
+ if(text.includes("ora")){
+  answer("Sono le "+new Date().toLocaleTimeString("it-IT"));
+ }
+ else if(text.includes("data")){
+  answer("Oggi è "+new Date().toLocaleDateString("it-IT"));
+ }
+ else if(text.includes("youtube")){
+  answer("Apro YouTube.");
+  window.open("https://www.youtube.com","_blank");
+ }
+ else if(text.includes("google")){
+  answer("Apro Google.");
+  window.open("https://www.google.com","_blank");
+ }
+ else if(text.includes("ciao")){
+  answer("Salve. È un piacere sentirti.");
+ }
+ else if(text.includes("come stai")){
+  answer("Tutti i sistemi sono operativi.");
+ }
+ else if(text.includes("chi sei")){
+  answer("Sono Jarvis, il tuo assistente personale.");
+ }
+ else if(text.includes("aiuto")){
+  answer("Puoi chiedermi l'ora, la data, aprire Google o YouTube, oppure salutarmi.");
+ }
+ else if(text.includes("stop")||text.includes("silenzio")){
+  speechSynthesis.cancel();
+  answer("Va bene. Resto in ascolto.");
+ }
+ else{
+  answer("Ho ricevuto il comando. Per rispondere a domande libere dovremo collegare il motore di intelligenza artificiale.");
+ }
+}
+
+function sendMessage(){
+ const input=document.getElementById("message");
+ const text=input.value.trim();
+ if(!text)return;
+ input.value="";
+ command(text);
+}
+
+document.getElementById("message").addEventListener("keydown",e=>{
+ if(e.key==="Enter")sendMessage();
+});
+
+function startListening(){
+ const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!Recognition){
+  answer("Il riconoscimento vocale non è supportato da questo browser. Prova Chrome.");
+  return;
+ }
+ const recognition=new Recognition();
+ recognition.lang="it-IT";
+ recognition.continuous=false;
+ recognition.interimResults=false;
+ statusText.textContent="TI STO ASCOLTANDO...";
+ recognition.onresult=e=>{
+  const text=e.results[0][0].transcript;
+  statusText.textContent="COMANDO RICEVUTO";
+  command(text);
+ };
+ recognition.onerror=()=>{
+  statusText.textContent="MICROFONO NON DISPONIBILE";
+ };
+ recognition.onend=()=>{
+  if(statusText.textContent==="TI STO ASCOLTANDO...")
+   statusText.textContent="SISTEMA PRONTO";
+ };
+ recognition.start();
+}
+</script>
+</body>
+</html>
